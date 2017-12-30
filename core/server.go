@@ -1,26 +1,26 @@
 package core
 
 import (
+	"io"
+	"net"
 	"os"
 	"strconv"
-	"net"
 
 	"github.com/cirocosta/gupload/messaging"
-	"google.golang.org/grpc"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
+	"google.golang.org/grpc"
 )
 
 type Server struct {
 	logger zerolog.Logger
 	server *grpc.Server
-	port int
+	port   int
 }
 
 type ServerConfig struct {
 	Port int
 }
-
 
 func NewServer(cfg ServerConfig) (s Server, err error) {
 	s.logger = zerolog.New(os.Stdout).
@@ -38,10 +38,10 @@ func NewServer(cfg ServerConfig) (s Server, err error) {
 	return
 }
 
-func (s *Server) Listen () (err error) {
+func (s *Server) Listen() (err error) {
 	var listener net.Listener
 
-	listener, err = net.Listen("tcp", ":" + strconv.Itoa(s.port))
+	listener, err = net.Listen("tcp", ":"+strconv.Itoa(s.port))
 	if err != nil {
 		err = errors.Wrapf(err,
 			"failed to listen on port %d",
@@ -62,14 +62,34 @@ func (s *Server) Listen () (err error) {
 }
 
 func (s *Server) Upload(stream messaging.GuploadService_UploadServer) (err error) {
+	var (
+		in *messaging.Chunk
+	)
+
+	for {
+		in, err = stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				return
+			}
+
+			err = errors.Wrapf(err,
+				"failed unexpectadely while reading chunks from stream")
+			return
+		}
+
+		s.logger.Info().
+			Interface("chunk", in.GetContent()).
+			Msg("message received")
+	}
+
 	return
 }
 
-func (s *Server) Close () {
+func (s *Server) Close() {
 	if s.server != nil {
 		s.server.Stop()
 	}
 
 	return
 }
-

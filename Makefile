@@ -4,6 +4,7 @@ install:
 fmt:
 	go fmt
 	cd ./cmd && go fmt
+	cd ./core && go fmt
 
 gen:
 	protoc \

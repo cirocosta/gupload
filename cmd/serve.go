@@ -14,7 +14,8 @@ var Serve = cli.Command{
 	Action: serveAction,
 	Flags: []cli.Flag{
 		&cli.IntFlag{
-			Name: "port",
+			Name:  "port",
+			Value: 1313,
 		},
 	},
 }
