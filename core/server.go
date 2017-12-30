@@ -79,7 +79,7 @@ func (s *Server) Upload(stream messaging.GuploadService_UploadServer) (err error
 		}
 
 		s.logger.Info().
-			Interface("chunk", in.GetContent()).
+			Str("chunk", string(in.GetContent())).
 			Msg("message received")
 	}
 
