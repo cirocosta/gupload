@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package messaging;
+
+service GuploadService {
+        rpc Upload(stream Chunk) returns (stream Chunk) {}
+}
+
+// metadata: chunk
+message Chunk {
+        bytes Content = 1;
+}
