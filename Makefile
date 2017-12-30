@@ -9,6 +9,6 @@ fmt:
 gen:
 	protoc \
 		./messaging/service.proto \
-		--gofast_out=plugins=grpc:.
+		--gogofaster_out=plugins=grpc:.
 
 .PHONY: gen
