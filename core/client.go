@@ -51,6 +51,7 @@ func (c *Client) UploadFile(ctx context.Context, f string) (err error) {
 		buf     []byte
 		n       int
 		file    *os.File
+		status  *messaging.UploadStatus
 	)
 
 	file, err = os.Open(f)
@@ -95,6 +96,20 @@ func (c *Client) UploadFile(ctx context.Context, f string) (err error) {
 				"failed to send chunk via stream")
 			return
 		}
+	}
+
+	status, err = stream.CloseAndRecv()
+	if err != nil {
+		err = errors.Wrapf(err,
+			"failed to receive upstream status response")
+		return
+	}
+
+	if status.Code != messaging.UploadStatusCode_Ok {
+		err = errors.Errorf(
+			"upload failed - msg: %s",
+			status.Message)
+		return
 	}
 
 	return

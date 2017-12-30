@@ -2,13 +2,14 @@
 // source: messaging/service.proto
 
 /*
-Package messaging is a generated protocol buffer package.
+	Package messaging is a generated protocol buffer package.
 
-It is generated from these files:
-	messaging/service.proto
+	It is generated from these files:
+		messaging/service.proto
 
-It has these top-level messages:
-	Chunk
+	It has these top-level messages:
+		Chunk
+		UploadStatus
 */
 package messaging
 
@@ -32,7 +33,30 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion2 // please upgrade the proto package
 
-// metadata: chunk
+type UploadStatusCode int32
+
+const (
+	UploadStatusCode_Unknown UploadStatusCode = 0
+	UploadStatusCode_Ok      UploadStatusCode = 1
+	UploadStatusCode_Failed  UploadStatusCode = 2
+)
+
+var UploadStatusCode_name = map[int32]string{
+	0: "Unknown",
+	1: "Ok",
+	2: "Failed",
+}
+var UploadStatusCode_value = map[string]int32{
+	"Unknown": 0,
+	"Ok":      1,
+	"Failed":  2,
+}
+
+func (x UploadStatusCode) String() string {
+	return proto.EnumName(UploadStatusCode_name, int32(x))
+}
+func (UploadStatusCode) EnumDescriptor() ([]byte, []int) { return fileDescriptorService, []int{0} }
+
 type Chunk struct {
 	Content []byte `protobuf:"bytes,1,opt,name=Content,proto3" json:"Content,omitempty"`
 }
@@ -49,8 +73,34 @@ func (m *Chunk) GetContent() []byte {
 	return nil
 }
 
+type UploadStatus struct {
+	Message string           `protobuf:"bytes,1,opt,name=Message,proto3" json:"Message,omitempty"`
+	Code    UploadStatusCode `protobuf:"varint,2,opt,name=Code,proto3,enum=messaging.UploadStatusCode" json:"Code,omitempty"`
+}
+
+func (m *UploadStatus) Reset()                    { *m = UploadStatus{} }
+func (m *UploadStatus) String() string            { return proto.CompactTextString(m) }
+func (*UploadStatus) ProtoMessage()               {}
+func (*UploadStatus) Descriptor() ([]byte, []int) { return fileDescriptorService, []int{1} }
+
+func (m *UploadStatus) GetMessage() string {
+	if m != nil {
+		return m.Message
+	}
+	return ""
+}
+
+func (m *UploadStatus) GetCode() UploadStatusCode {
+	if m != nil {
+		return m.Code
+	}
+	return UploadStatusCode_Unknown
+}
+
 func init() {
 	proto.RegisterType((*Chunk)(nil), "messaging.Chunk")
+	proto.RegisterType((*UploadStatus)(nil), "messaging.UploadStatus")
+	proto.RegisterEnum("messaging.UploadStatusCode", UploadStatusCode_name, UploadStatusCode_value)
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -86,7 +136,7 @@ func (c *guploadServiceClient) Upload(ctx context.Context, opts ...grpc.CallOpti
 
 type GuploadService_UploadClient interface {
 	Send(*Chunk) error
-	Recv() (*Chunk, error)
+	CloseAndRecv() (*UploadStatus, error)
 	grpc.ClientStream
 }
 
@@ -98,8 +148,11 @@ func (x *guploadServiceUploadClient) Send(m *Chunk) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *guploadServiceUploadClient) Recv() (*Chunk, error) {
-	m := new(Chunk)
+func (x *guploadServiceUploadClient) CloseAndRecv() (*UploadStatus, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(UploadStatus)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -121,7 +174,7 @@ func _GuploadService_Upload_Handler(srv interface{}, stream grpc.ServerStream) e
 }
 
 type GuploadService_UploadServer interface {
-	Send(*Chunk) error
+	SendAndClose(*UploadStatus) error
 	Recv() (*Chunk, error)
 	grpc.ServerStream
 }
@@ -130,7 +183,7 @@ type guploadServiceUploadServer struct {
 	grpc.ServerStream
 }
 
-func (x *guploadServiceUploadServer) Send(m *Chunk) error {
+func (x *guploadServiceUploadServer) SendAndClose(m *UploadStatus) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -150,7 +203,6 @@ var _GuploadService_serviceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Upload",
 			Handler:       _GuploadService_Upload_Handler,
-			ServerStreams: true,
 			ClientStreams: true,
 		},
 	},
@@ -181,6 +233,35 @@ func (m *Chunk) MarshalTo(dAtA []byte) (int, error) {
 	return i, nil
 }
 
+func (m *UploadStatus) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *UploadStatus) MarshalTo(dAtA []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Message) > 0 {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintService(dAtA, i, uint64(len(m.Message)))
+		i += copy(dAtA[i:], m.Message)
+	}
+	if m.Code != 0 {
+		dAtA[i] = 0x10
+		i++
+		i = encodeVarintService(dAtA, i, uint64(m.Code))
+	}
+	return i, nil
+}
+
 func encodeVarintService(dAtA []byte, offset int, v uint64) int {
 	for v >= 1<<7 {
 		dAtA[offset] = uint8(v&0x7f | 0x80)
@@ -196,6 +277,19 @@ func (m *Chunk) Size() (n int) {
 	l = len(m.Content)
 	if l > 0 {
 		n += 1 + l + sovService(uint64(l))
+	}
+	return n
+}
+
+func (m *UploadStatus) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.Message)
+	if l > 0 {
+		n += 1 + l + sovService(uint64(l))
+	}
+	if m.Code != 0 {
+		n += 1 + sovService(uint64(m.Code))
 	}
 	return n
 }
@@ -273,6 +367,104 @@ func (m *Chunk) Unmarshal(dAtA []byte) error {
 				m.Content = []byte{}
 			}
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *UploadStatus) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: UploadStatus: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: UploadStatus: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Message", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Message = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Code", wireType)
+			}
+			m.Code = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Code |= (UploadStatusCode(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipService(dAtA[iNdEx:])
@@ -402,14 +594,20 @@ var (
 func init() { proto.RegisterFile("messaging/service.proto", fileDescriptorService) }
 
 var fileDescriptorService = []byte{
-	// 144 bytes of a gzipped FileDescriptorProto
+	// 232 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0xcf, 0x4d, 0x2d, 0x2e,
 	0x4e, 0x4c, 0xcf, 0xcc, 0x4b, 0xd7, 0x2f, 0x4e, 0x2d, 0x2a, 0xcb, 0x4c, 0x4e, 0xd5, 0x2b, 0x28,
 	0xca, 0x2f, 0xc9, 0x17, 0xe2, 0x84, 0x4b, 0x28, 0x29, 0x72, 0xb1, 0x3a, 0x67, 0x94, 0xe6, 0x65,
 	0x0b, 0x49, 0x70, 0xb1, 0x3b, 0xe7, 0xe7, 0x95, 0xa4, 0xe6, 0x95, 0x48, 0x30, 0x2a, 0x30, 0x6a,
-	0xf0, 0x04, 0xc1, 0xb8, 0x46, 0x2e, 0x5c, 0x7c, 0xee, 0xa5, 0x05, 0x39, 0xf9, 0x89, 0x29, 0xc1,
-	0x10, 0x53, 0x84, 0x8c, 0xb8, 0xd8, 0x42, 0xc1, 0x02, 0x42, 0x02, 0x7a, 0x70, 0xa3, 0xf4, 0xc0,
-	0xe6, 0x48, 0x61, 0x88, 0x28, 0x31, 0x68, 0x30, 0x1a, 0x30, 0x3a, 0x09, 0x9c, 0x78, 0x24, 0xc7,
-	0x78, 0xe1, 0x91, 0x1c, 0xe3, 0x83, 0x47, 0x72, 0x8c, 0x13, 0x1e, 0xcb, 0x31, 0x24, 0xb1, 0x81,
-	0x1d, 0x63, 0x0c, 0x08, 0x00, 0x00, 0xff, 0xff, 0xfc, 0xbc, 0xb9, 0x9d, 0xa7, 0x00, 0x00, 0x00,
+	0xf0, 0x04, 0xc1, 0xb8, 0x4a, 0x91, 0x5c, 0x3c, 0xa1, 0x05, 0x39, 0xf9, 0x89, 0x29, 0xc1, 0x25,
+	0x89, 0x25, 0xa5, 0xc5, 0x20, 0x95, 0xbe, 0x60, 0xfd, 0xa9, 0x60, 0x95, 0x9c, 0x41, 0x30, 0xae,
+	0x90, 0x3e, 0x17, 0x8b, 0x73, 0x7e, 0x4a, 0xaa, 0x04, 0x93, 0x02, 0xa3, 0x06, 0x9f, 0x91, 0xb4,
+	0x1e, 0xdc, 0x1a, 0x3d, 0x64, 0x03, 0x40, 0x4a, 0x82, 0xc0, 0x0a, 0xb5, 0x8c, 0xb9, 0x04, 0xd0,
+	0x65, 0x84, 0xb8, 0xb9, 0xd8, 0x43, 0xf3, 0xb2, 0xf3, 0xf2, 0xcb, 0xf3, 0x04, 0x18, 0x84, 0xd8,
+	0xb8, 0x98, 0xfc, 0xb3, 0x05, 0x18, 0x85, 0xb8, 0xb8, 0xd8, 0xdc, 0x12, 0x33, 0x73, 0x52, 0x53,
+	0x04, 0x98, 0x8c, 0x3c, 0xb9, 0xf8, 0xdc, 0x4b, 0x21, 0xba, 0x20, 0xbe, 0x12, 0x32, 0xe7, 0x62,
+	0x83, 0x18, 0x23, 0x24, 0x80, 0x64, 0x27, 0xd8, 0x5f, 0x52, 0xe2, 0x38, 0x5c, 0xa1, 0xc4, 0xa0,
+	0xc1, 0xe8, 0x24, 0x70, 0xe2, 0x91, 0x1c, 0xe3, 0x85, 0x47, 0x72, 0x8c, 0x0f, 0x1e, 0xc9, 0x31,
+	0x4e, 0x78, 0x2c, 0xc7, 0x90, 0xc4, 0x06, 0x0e, 0x21, 0x63, 0x40, 0x00, 0x00, 0x00, 0xff, 0xff,
+	0x3d, 0x43, 0x95, 0xa6, 0x3c, 0x01, 0x00, 0x00,
 }

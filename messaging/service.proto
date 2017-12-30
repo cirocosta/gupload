@@ -3,10 +3,20 @@ syntax = "proto3";
 package messaging;
 
 service GuploadService {
-        rpc Upload(stream Chunk) returns (stream Chunk) {}
+        rpc Upload(stream Chunk) returns (UploadStatus) {}
 }
 
-// metadata: chunk
 message Chunk {
         bytes Content = 1;
+}
+
+enum UploadStatusCode {
+        Unknown = 0;
+        Ok = 1;
+        Failed = 2;
+}
+
+message UploadStatus {
+        string Message = 1;
+        UploadStatusCode Code = 2;
 }

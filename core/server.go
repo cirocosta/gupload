@@ -83,6 +83,16 @@ func (s *Server) Upload(stream messaging.GuploadService_UploadServer) (err error
 			Msg("message received")
 	}
 
+	err = stream.SendAndClose(&messaging.UploadStatus{
+		Message: "Upload received with success",
+		Code:    messaging.UploadStatusCode_Ok,
+	})
+	if err != nil {
+		err = errors.Wrapf(err,
+			"failed to send status code")
+		return
+	}
+
 	return
 }
 
