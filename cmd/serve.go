@@ -17,6 +17,9 @@ var Serve = cli.Command{
 			Name:  "port",
 			Value: 1313,
 		},
+		&cli.BoolFlag{
+			Name: "http2",
+		},
 	},
 }
 
@@ -31,13 +34,25 @@ func must(err error) {
 
 func serveAction(c *cli.Context) (err error) {
 	var (
-		port = c.Int("port")
+		port   = c.Int("port")
+		server core.Server
+		http2  = c.Bool("http2")
 	)
 
-	server, err := core.NewServer(core.ServerConfig{
-		Port: port,
-	})
-	must(err)
+	switch {
+	case http2:
+		http2Server, err := core.NewServerH2(core.ServerH2Config{
+			Port: port,
+		})
+		must(err)
+		server = &http2Server
+	default:
+		grpcServer, err := core.NewServerGRPC(core.ServerGRPCConfig{
+			Port: port,
+		})
+		must(err)
+		server = &grpcServer
+	}
 
 	err = server.Listen()
 	must(err)
