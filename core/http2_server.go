@@ -51,6 +51,7 @@ func (s *ServerH2) Listen() (err error) {
 }
 
 func (s *ServerH2) Upload(w http.ResponseWriter, r *http.Request) {
+	// just receives the content and prints to stdout
 	return
 }
 
