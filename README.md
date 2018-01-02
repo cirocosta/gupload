@@ -85,3 +85,17 @@ gupload serve
 gupload --file ./main.go
 ```
 
+To use tls-based connections:
+
+```
+# Create a server
+gupload serve \
+        --key ./certs/localhost.key \
+        --certificate ./certs/localhost.cert
+
+# Upload a file
+gupload upload \
+        --root-certificate ./certs/localhost.cert \
+        --file ./main.go
+```
+
