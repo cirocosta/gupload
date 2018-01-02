@@ -32,7 +32,7 @@ GLOBAL OPTIONS:
 Use `serve` to initiate a server (either `gRPC` or `http2` based) and `upload` to upload a file to a given address (either via `gRPC` or `http2`).
 
 
-#### HTTP2 server and client
+#### HTTP2
 
 The `http2` version of both server and client require certificates / private keys. This is needed to have a well formed TLS connection between them.
 
