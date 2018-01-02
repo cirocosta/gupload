@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 // ClientGRPC provides the implementation of a file
@@ -22,14 +23,34 @@ type ClientGRPC struct {
 }
 
 type ClientGRPCConfig struct {
-	Address   string
-	ChunkSize int
+	Address         string
+	ChunkSize       int
+	RootCertificate string
 }
 
 func NewClientGRPC(cfg ClientGRPCConfig) (c ClientGRPC, err error) {
+	var (
+		grpcOpts  = []grpc.DialOption{}
+		grpcCreds credentials.TransportCredentials
+	)
+
 	if cfg.Address == "" {
 		err = errors.Errorf("address must be specified")
 		return
+	}
+
+	if cfg.RootCertificate != "" {
+		grpcCreds, err = credentials.NewClientTLSFromFile(cfg.RootCertificate, "localhost")
+		if err != nil {
+			err = errors.Wrapf(err,
+				"failed to create grpc tls client via root-cert %s",
+				cfg.RootCertificate)
+			return
+		}
+
+		grpcOpts = append(grpcOpts, grpc.WithTransportCredentials(grpcCreds))
+	} else {
+		grpcOpts = append(grpcOpts, grpc.WithInsecure())
 	}
 
 	switch {
@@ -49,10 +70,7 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c ClientGRPC, err error) {
 		Logger()
 
 	// TODO replace this by non-deprecated apis
-	c.conn, err = grpc.Dial(cfg.Address,
-		grpc.WithInsecure(),
-		grpc.WithCompressor(grpc.NewGZIPCompressor()),
-		grpc.WithDecompressor(grpc.NewGZIPDecompressor()))
+	c.conn, err = grpc.Dial(cfg.Address, grpcOpts...)
 	if err != nil {
 		err = errors.Wrapf(err,
 			"failed to start grpc connection with address %s",

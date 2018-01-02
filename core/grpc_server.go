@@ -10,16 +10,21 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 type ServerGRPC struct {
-	logger zerolog.Logger
-	server *grpc.Server
-	port   int
+	logger      zerolog.Logger
+	server      *grpc.Server
+	port        int
+	certificate string
+	key         string
 }
 
 type ServerGRPCConfig struct {
-	Port int
+	Certificate string
+	Key         string
+	Port        int
 }
 
 func NewServerGRPC(cfg ServerGRPCConfig) (s ServerGRPC, err error) {
@@ -34,12 +39,18 @@ func NewServerGRPC(cfg ServerGRPCConfig) (s ServerGRPC, err error) {
 	}
 
 	s.port = cfg.Port
+	s.certificate = cfg.Certificate
+	s.key = cfg.Key
 
 	return
 }
 
 func (s *ServerGRPC) Listen() (err error) {
-	var listener net.Listener
+	var (
+		listener  net.Listener
+		grpcOpts  = []grpc.ServerOption{}
+		grpcCreds credentials.TransportCredentials
+	)
 
 	listener, err = net.Listen("tcp", ":"+strconv.Itoa(s.port))
 	if err != nil {
@@ -49,9 +60,20 @@ func (s *ServerGRPC) Listen() (err error) {
 		return
 	}
 
-	s.server = grpc.NewServer(
-		grpc.RPCCompressor(grpc.NewGZIPCompressor()),
-		grpc.RPCDecompressor(grpc.NewGZIPDecompressor()))
+	if s.certificate != "" && s.key != "" {
+		grpcCreds, err = credentials.NewServerTLSFromFile(
+			s.certificate, s.key)
+		if err != nil {
+			err = errors.Wrapf(err,
+				"failed to create tls grpc server using cert %s and key %s",
+				s.certificate, s.key)
+			return
+		}
+
+		grpcOpts = append(grpcOpts, grpc.Creds(grpcCreds))
+	}
+
+	s.server = grpc.NewServer(grpcOpts...)
 	messaging.RegisterGuploadServiceServer(s.server, s)
 
 	err = s.server.Serve(listener)

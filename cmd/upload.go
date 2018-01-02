@@ -70,8 +70,9 @@ func uploadAction(c *cli.Context) (err error) {
 		client = &http2Client
 	default:
 		grpcClient, err := core.NewClientGRPC(core.ClientGRPCConfig{
-			Address:   address,
-			ChunkSize: chunkSize,
+			Address:         address,
+			RootCertificate: rootCertificate,
+			ChunkSize:       chunkSize,
 		})
 		must(err)
 		client = &grpcClient

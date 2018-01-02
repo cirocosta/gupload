@@ -53,7 +53,9 @@ func serveAction(c *cli.Context) (err error) {
 		server = &http2Server
 	default:
 		grpcServer, err := core.NewServerGRPC(core.ServerGRPCConfig{
-			Port: port,
+			Port:        port,
+			Certificate: certificate,
+			Key:         key,
 		})
 		must(err)
 		server = &grpcServer
