@@ -15,7 +15,7 @@ var Upload = cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "address",
-			Value: "localhost:1313",
+			Value: "https://localhost:1313",
 		},
 		&cli.IntFlag{
 			Name:  "chunk-size",
