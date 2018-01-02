@@ -20,6 +20,12 @@ var Serve = cli.Command{
 		&cli.BoolFlag{
 			Name: "http2",
 		},
+		&cli.StringFlag{
+			Name: "key",
+		},
+		&cli.StringFlag{
+			Name: "certificate",
+		},
 	},
 }
 

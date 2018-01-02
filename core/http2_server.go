@@ -11,17 +11,31 @@ import (
 )
 
 type ServerH2 struct {
-	server *http.Server
-	logger zerolog.Logger
+	server      *http.Server
+	logger      zerolog.Logger
+	certificate string
+	key         string
 }
 
 type ServerH2Config struct {
-	Port int
+	Port        int
+	Certificate string
+	Key         string
 }
 
 func NewServerH2(cfg ServerH2Config) (s ServerH2, err error) {
 	if cfg.Port == 0 {
 		err = errors.Errorf("Port must be non-zero")
+		return
+	}
+
+	if cfg.Certificate == "" {
+		err = errors.Errorf("Certificate must be specified")
+		return
+	}
+
+	if cfg.Key == "" {
+		err = errors.Errorf("Key must be specified")
 		return
 	}
 
@@ -34,6 +48,9 @@ func NewServerH2(cfg ServerH2Config) (s ServerH2, err error) {
 		Addr: ":" + strconv.Itoa(cfg.Port),
 	}
 
+	s.certificate = cfg.Certificate
+	s.key = cfg.Key
+
 	http2.ConfigureServer(s.server, nil)
 	http.HandleFunc("/upload", s.Upload)
 
@@ -41,7 +58,8 @@ func NewServerH2(cfg ServerH2Config) (s ServerH2, err error) {
 }
 
 func (s *ServerH2) Listen() (err error) {
-	err = s.server.ListenAndServe()
+	err = s.server.ListenAndServeTLS(
+		s.certificate, s.key)
 	if err != nil {
 		err = errors.Wrapf(err, "failed during server listen and serve")
 		return
@@ -52,6 +70,10 @@ func (s *ServerH2) Listen() (err error) {
 
 func (s *ServerH2) Upload(w http.ResponseWriter, r *http.Request) {
 	// just receives the content and prints to stdout
+	// read the body.
+
+	s.logger.Info().Msg("upload received")
+
 	return
 }
 
