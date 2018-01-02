@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -40,15 +41,24 @@ func must(err error) {
 
 func serveAction(c *cli.Context) (err error) {
 	var (
-		port   = c.Int("port")
-		server core.Server
-		http2  = c.Bool("http2")
+		port        = c.Int("port")
+		server      core.Server
+		http2       = c.Bool("http2")
+		key         = c.String("key")
+		certificate = c.String("certificate")
 	)
 
 	switch {
 	case http2:
+		if key == "" || certificate == "" {
+			must(errors.New(
+				"http2 requires key and certificate to be specified"))
+		}
+
 		http2Server, err := core.NewServerH2(core.ServerH2Config{
-			Port: port,
+			Port:        port,
+			Certificate: certificate,
+			Key:         key,
 		})
 		must(err)
 		server = &http2Server

@@ -24,6 +24,9 @@ var Upload = cli.Command{
 		&cli.StringFlag{
 			Name: "file",
 		},
+		&cli.StringFlag{
+			Name: "root-certificate",
+		},
 		&cli.BoolFlag{
 			Name: "http2",
 		},
@@ -32,11 +35,12 @@ var Upload = cli.Command{
 
 func uploadAction(c *cli.Context) (err error) {
 	var (
-		address   = c.String("address")
-		file      = c.String("file")
-		chunkSize = c.Int("chunk-size")
-		http2     = c.Bool("http2")
-		client    core.Client
+		address         = c.String("address")
+		file            = c.String("file")
+		chunkSize       = c.Int("chunk-size")
+		http2           = c.Bool("http2")
+		rootCertificate = c.String("root-certificate")
+		client          core.Client
 	)
 
 	if address == "" {
@@ -49,8 +53,13 @@ func uploadAction(c *cli.Context) (err error) {
 
 	switch {
 	case http2:
+		if rootCertificate == "" {
+			must(errors.New("http2 requires root-certificate to be supplied"))
+		}
+
 		http2Client, err := core.NewClientH2(core.ClientH2Config{
-			Address: address,
+			Address:         address,
+			RootCertificate: rootCertificate,
 		})
 		must(err)
 		client = &http2Client
