@@ -1,8 +1,10 @@
 package core
 
 import (
+	"bytes"
 	"crypto/tls"
 	"crypto/x509"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -16,7 +18,8 @@ import (
 // uploader that streams data via an HTTP2-enabled
 // connection.
 type ClientH2 struct {
-	client *http.Client
+	client  *http.Client
+	address string
 }
 
 type ClientH2Config struct {
@@ -59,12 +62,15 @@ func NewClientH2(cfg ClientH2Config) (c ClientH2, err error) {
 		},
 	}
 
+	c.address = cfg.Address
+
 	return
 }
 
 func (c *ClientH2) UploadFile(ctx context.Context, f string) (err error) {
 	var (
 		file *os.File
+		body = new(bytes.Buffer)
 	)
 
 	file, err = os.Open(f)
@@ -74,6 +80,34 @@ func (c *ClientH2) UploadFile(ctx context.Context, f string) (err error) {
 		return
 	}
 	defer file.Close()
+
+	_, err = io.Copy(body, file)
+	if err != nil {
+		err = errors.Wrapf(err,
+			"failed to copy file %s to body buffer",
+			f)
+		return
+	}
+
+	req, err := http.NewRequest("POST", c.address+"/upload", body)
+	if err != nil {
+		err = errors.Wrapf(err,
+			"failed to create POST request")
+		return
+	}
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		err = errors.Wrapf(err,
+			"request failed")
+		return
+	}
+
+	if resp.StatusCode != 200 {
+		err = errors.Errorf("request failed - status code: %d",
+			resp.StatusCode)
+		return
+	}
 
 	return
 }
