@@ -65,7 +65,8 @@ func (s *ServerGRPC) Listen() (err error) {
 
 func (s *ServerGRPC) Upload(stream messaging.GuploadService_UploadServer) (err error) {
 	var (
-		in *messaging.Chunk
+		in            *messaging.Chunk
+		bytesReceived uint64 = 0
 	)
 
 	for {
@@ -80,8 +81,11 @@ func (s *ServerGRPC) Upload(stream messaging.GuploadService_UploadServer) (err e
 			return
 		}
 
+		bytesReceived += uint64(len(in.GetContent()))
+
 		s.logger.Info().
-			Str("chunk", string(in.GetContent())).
+			Int("received", len(in.GetContent())).
+			Uint64("total_received", bytesReceived).
 			Msg("message received")
 	}
 

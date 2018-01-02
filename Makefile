@@ -6,10 +6,7 @@ fmt:
 	cd ./cmd && go fmt
 	cd ./core && go fmt
 
-gen:
-	protoc \
-		./messaging/service.proto \
-		--gogofaster_out=plugins=grpc:.
+certs:
 	openssl genrsa \
 		-out ./certs/localhost.key \
 		2048
@@ -20,4 +17,9 @@ gen:
 		-days 3650 \
 		-subj /CN=localhost
 
-.PHONY: fmt install gen
+grpc:
+	protoc \
+		./messaging/service.proto \
+		--gogofaster_out=plugins=grpc:.
+
+.PHONY: fmt install grpc certs

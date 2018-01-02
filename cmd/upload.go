@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/cirocosta/gupload/core"
 	"golang.org/x/net/context"
@@ -15,7 +16,7 @@ var Upload = cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "address",
-			Value: "https://localhost:1313",
+			Value: "localhost:1313",
 		},
 		&cli.IntFlag{
 			Name:  "chunk-size",
@@ -55,6 +56,10 @@ func uploadAction(c *cli.Context) (err error) {
 	case http2:
 		if rootCertificate == "" {
 			must(errors.New("http2 requires root-certificate to be supplied"))
+		}
+
+		if !strings.HasPrefix(address, "https://") {
+			address = "https://" + address
 		}
 
 		http2Client, err := core.NewClientH2(core.ClientH2Config{

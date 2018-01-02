@@ -1,6 +1,9 @@
 package core
 
 import (
+	"bytes"
+	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strconv"
@@ -69,10 +72,29 @@ func (s *ServerH2) Listen() (err error) {
 }
 
 func (s *ServerH2) Upload(w http.ResponseWriter, r *http.Request) {
+	var (
+		err           error
+		bytesReceived int64 = 0
+		buf                 = new(bytes.Buffer)
+	)
+
+	bytesReceived, err = io.Copy(buf, r.Body)
+	if err != nil {
+		s.logger.Error().
+			Err(err).
+			Msg("failed to copy body into buf")
+
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(w, "%+v", err)
+		return
+	}
+
 	// just receives the content and prints to stdout
 	// read the body.
 
-	s.logger.Info().Msg("upload received")
+	s.logger.Info().
+		Int64("bytes_received", bytesReceived).
+		Msg("upload received")
 
 	return
 }
