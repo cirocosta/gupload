@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
-	"os"
 
 	"github.com/cirocosta/gupload/core"
 	"gopkg.in/urfave/cli.v2"
@@ -28,15 +26,6 @@ var Serve = cli.Command{
 			Name: "certificate",
 		},
 	},
-}
-
-func must(err error) {
-	if err == nil {
-		return
-	}
-
-	fmt.Printf("ERROR: %+v\n", err)
-	os.Exit(1)
 }
 
 func serveAction(c *cli.Context) (err error) {

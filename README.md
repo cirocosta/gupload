@@ -6,3 +6,5 @@
 
 ### Overview
 
+`gupload` is an experiment to verify how uploading files via gRPC compares to a barebones HTTP2 server.
+

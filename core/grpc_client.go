@@ -11,6 +11,9 @@ import (
 	"google.golang.org/grpc"
 )
 
+// ClientGRPC provides the implementation of a file
+// uploader that streams chunks via protobuf-encoded
+// messages.
 type ClientGRPC struct {
 	logger    zerolog.Logger
 	conn      *grpc.ClientConn

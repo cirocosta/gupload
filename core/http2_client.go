@@ -12,6 +12,9 @@ import (
 	"golang.org/x/net/http2"
 )
 
+// ClientH2 provides the implementation of a file
+// uploader that streams data via an HTTP2-enabled
+// connection.
 type ClientH2 struct {
 	client *http.Client
 }
