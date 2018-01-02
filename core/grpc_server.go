@@ -73,7 +73,7 @@ func (s *ServerGRPC) Upload(stream messaging.GuploadService_UploadServer) (err e
 		in, err = stream.Recv()
 		if err != nil {
 			if err == io.EOF {
-				return
+				goto END
 			}
 
 			err = errors.Wrapf(err,
@@ -89,6 +89,7 @@ func (s *ServerGRPC) Upload(stream messaging.GuploadService_UploadServer) (err e
 			Msg("message received")
 	}
 
+END:
 	err = stream.SendAndClose(&messaging.UploadStatus{
 		Message: "Upload received with success",
 		Code:    messaging.UploadStatusCode_Ok,
