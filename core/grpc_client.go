@@ -86,12 +86,11 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c ClientGRPC, err error) {
 
 func (c *ClientGRPC) UploadFile(ctx context.Context, f string) (stats Stats, err error) {
 	var (
-		writing      = true
-		buf          []byte
-		n            int
-		bytesWritten uint64
-		file         *os.File
-		status       *messaging.UploadStatus
+		writing = true
+		buf     []byte
+		n       int
+		file    *os.File
+		status  *messaging.UploadStatus
 	)
 
 	file, err = os.Open(f)
@@ -128,11 +127,8 @@ func (c *ClientGRPC) UploadFile(ctx context.Context, f string) (stats Stats, err
 			return
 		}
 
-		bytesWritten += uint64(n)
-
-		buf = buf[:n]
 		err = stream.Send(&messaging.Chunk{
-			Content: buf,
+			Content: buf[:n],
 		})
 		if err != nil {
 			err = errors.Wrapf(err,
@@ -156,8 +152,6 @@ func (c *ClientGRPC) UploadFile(ctx context.Context, f string) (stats Stats, err
 			status.Message)
 		return
 	}
-
-	stats.Bytes = bytesWritten
 
 	return
 }
