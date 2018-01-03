@@ -8,6 +8,8 @@
 
 `gupload` is an experiment to verify how uploading files via gRPC compares to a barebones HTTP2 server.
 
+See [sending-files-via-grpc](https://ops.tips/blog/sending-files-via-grpc/) to check the experiment.
+
 ```
 NAME:
    gupload - upload files as fast as possible
