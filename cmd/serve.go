@@ -29,10 +29,6 @@ var Serve = cli.Command{
 			Name:  "certificate",
 			Usage: "path to TLS certificate",
 		},
-		&cli.StringFlag{
-			Name:  "compress",
-			Usage: "whether or not to enable compression",
-		},
 	},
 }
 

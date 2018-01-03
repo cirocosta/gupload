@@ -11,6 +11,8 @@ import (
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+
+	_ "google.golang.org/grpc/encoding/gzip"
 )
 
 type ServerGRPC struct {

@@ -11,6 +11,8 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+
+	_ "google.golang.org/grpc/encoding/gzip"
 )
 
 // ClientGRPC provides the implementation of a file
@@ -27,6 +29,7 @@ type ClientGRPCConfig struct {
 	Address         string
 	ChunkSize       int
 	RootCertificate string
+	Compress        bool
 }
 
 func NewClientGRPC(cfg ClientGRPCConfig) (c ClientGRPC, err error) {
@@ -38,6 +41,11 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c ClientGRPC, err error) {
 	if cfg.Address == "" {
 		err = errors.Errorf("address must be specified")
 		return
+	}
+
+	if cfg.Compress {
+		grpcOpts = append(grpcOpts,
+			grpc.WithDefaultCallOptions(grpc.UseCompressor("gzip")))
 	}
 
 	if cfg.RootCertificate != "" {
@@ -70,7 +78,6 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c ClientGRPC, err error) {
 		Str("from", "client").
 		Logger()
 
-	// TODO replace this by non-deprecated apis
 	c.conn, err = grpc.Dial(cfg.Address, grpcOpts...)
 	if err != nil {
 		err = errors.Wrapf(err,

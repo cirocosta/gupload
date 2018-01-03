@@ -51,6 +51,7 @@ func uploadAction(c *cli.Context) (err error) {
 		address         = c.String("address")
 		file            = c.String("file")
 		rootCertificate = c.String("root-certificate")
+		compress        = c.Bool("compress")
 		client          core.Client
 	)
 
@@ -82,6 +83,7 @@ func uploadAction(c *cli.Context) (err error) {
 		grpcClient, err := core.NewClientGRPC(core.ClientGRPCConfig{
 			Address:         address,
 			RootCertificate: rootCertificate,
+			Compress:        compress,
 			ChunkSize:       chunkSize,
 		})
 		must(err)
