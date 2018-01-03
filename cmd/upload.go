@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/cirocosta/gupload/core"
@@ -17,29 +18,38 @@ var Upload = cli.Command{
 		&cli.StringFlag{
 			Name:  "address",
 			Value: "localhost:1313",
+			Usage: "address of the server to connect to",
 		},
 		&cli.IntFlag{
 			Name:  "chunk-size",
+			Usage: "size of the chunk messages (grpc only)",
 			Value: (1 << 12),
 		},
 		&cli.StringFlag{
-			Name: "file",
+			Name:  "file",
+			Usage: "file to upload",
 		},
 		&cli.StringFlag{
-			Name: "root-certificate",
+			Name:  "root-certificate",
+			Usage: "path of a certificate to add to the root CAs",
 		},
 		&cli.BoolFlag{
-			Name: "http2",
+			Name:  "http2",
+			Usage: "whether or not to use http2 - requires root-certificate",
+		},
+		&cli.BoolFlag{
+			Name:  "compress",
+			Usage: "whether or not to enable payload compression",
 		},
 	},
 }
 
 func uploadAction(c *cli.Context) (err error) {
 	var (
-		address         = c.String("address")
-		file            = c.String("file")
 		chunkSize       = c.Int("chunk-size")
 		http2           = c.Bool("http2")
+		address         = c.String("address")
+		file            = c.String("file")
 		rootCertificate = c.String("root-certificate")
 		client          core.Client
 	)
@@ -78,9 +88,11 @@ func uploadAction(c *cli.Context) (err error) {
 		client = &grpcClient
 	}
 
-	err = client.UploadFile(context.Background(), file)
+	stat, err := client.UploadFile(context.Background(), file)
 	must(err)
 	defer client.Close()
+
+	fmt.Printf("%d\n", stat.FinishedAt.Sub(stat.StartedAt).Nanoseconds())
 
 	return
 }

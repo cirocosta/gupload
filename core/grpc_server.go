@@ -86,13 +86,8 @@ func (s *ServerGRPC) Listen() (err error) {
 }
 
 func (s *ServerGRPC) Upload(stream messaging.GuploadService_UploadServer) (err error) {
-	var (
-		in            *messaging.Chunk
-		bytesReceived uint64 = 0
-	)
-
 	for {
-		in, err = stream.Recv()
+		_, err = stream.Recv()
 		if err != nil {
 			if err == io.EOF {
 				goto END
@@ -102,14 +97,9 @@ func (s *ServerGRPC) Upload(stream messaging.GuploadService_UploadServer) (err e
 				"failed unexpectadely while reading chunks from stream")
 			return
 		}
-
-		bytesReceived += uint64(len(in.GetContent()))
-
-		s.logger.Info().
-			Int("received", len(in.GetContent())).
-			Uint64("total_received", bytesReceived).
-			Msg("message received")
 	}
+
+	s.logger.Info().Msg("upload received")
 
 END:
 	err = stream.SendAndClose(&messaging.UploadStatus{

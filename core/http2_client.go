@@ -1,13 +1,12 @@
 package core
 
 import (
-	"bytes"
 	"crypto/tls"
 	"crypto/x509"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
@@ -67,10 +66,9 @@ func NewClientH2(cfg ClientH2Config) (c ClientH2, err error) {
 	return
 }
 
-func (c *ClientH2) UploadFile(ctx context.Context, f string) (err error) {
+func (c *ClientH2) UploadFile(ctx context.Context, f string) (stats Stats, err error) {
 	var (
 		file *os.File
-		body = new(bytes.Buffer)
 	)
 
 	file, err = os.Open(f)
@@ -81,27 +79,21 @@ func (c *ClientH2) UploadFile(ctx context.Context, f string) (err error) {
 	}
 	defer file.Close()
 
-	_, err = io.Copy(body, file)
-	if err != nil {
-		err = errors.Wrapf(err,
-			"failed to copy file %s to body buffer",
-			f)
-		return
-	}
-
-	req, err := http.NewRequest("POST", c.address+"/upload", body)
+	req, err := http.NewRequest("POST", c.address+"/upload", file)
 	if err != nil {
 		err = errors.Wrapf(err,
 			"failed to create POST request")
 		return
 	}
 
+	stats.StartedAt = time.Now()
 	resp, err := c.client.Do(req)
 	if err != nil {
 		err = errors.Wrapf(err,
 			"request failed")
 		return
 	}
+	stats.FinishedAt = time.Now()
 
 	if resp.StatusCode != 200 {
 		err = errors.Errorf("request failed - status code: %d",

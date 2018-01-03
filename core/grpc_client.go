@@ -3,6 +3,7 @@ package core
 import (
 	"io"
 	"os"
+	"time"
 
 	"github.com/cirocosta/gupload/messaging"
 	"github.com/pkg/errors"
@@ -57,8 +58,8 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c ClientGRPC, err error) {
 	case cfg.ChunkSize == 0:
 		err = errors.Errorf("ChunkSize must be specified")
 		return
-	case cfg.ChunkSize > (1 << 20):
-		err = errors.Errorf("ChunkSize must be < than 1MB")
+	case cfg.ChunkSize > (1 << 22):
+		err = errors.Errorf("ChunkSize must be < than 4MB")
 		return
 	default:
 		c.chunkSize = cfg.ChunkSize
@@ -83,13 +84,14 @@ func NewClientGRPC(cfg ClientGRPCConfig) (c ClientGRPC, err error) {
 	return
 }
 
-func (c *ClientGRPC) UploadFile(ctx context.Context, f string) (err error) {
+func (c *ClientGRPC) UploadFile(ctx context.Context, f string) (stats Stats, err error) {
 	var (
-		writing = true
-		buf     []byte
-		n       int
-		file    *os.File
-		status  *messaging.UploadStatus
+		writing      = true
+		buf          []byte
+		n            int
+		bytesWritten uint64
+		file         *os.File
+		status       *messaging.UploadStatus
 	)
 
 	file, err = os.Open(f)
@@ -110,7 +112,8 @@ func (c *ClientGRPC) UploadFile(ctx context.Context, f string) (err error) {
 	}
 	defer stream.CloseSend()
 
-	buf = make([]byte, 0, 100)
+	stats.StartedAt = time.Now()
+	buf = make([]byte, 0, c.chunkSize)
 	for writing {
 		n, err = file.Read(buf[:cap(buf)])
 		if err != nil {
@@ -125,6 +128,8 @@ func (c *ClientGRPC) UploadFile(ctx context.Context, f string) (err error) {
 			return
 		}
 
+		bytesWritten += uint64(n)
+
 		buf = buf[:n]
 		err = stream.Send(&messaging.Chunk{
 			Content: buf,
@@ -135,6 +140,8 @@ func (c *ClientGRPC) UploadFile(ctx context.Context, f string) (err error) {
 			return
 		}
 	}
+
+	stats.FinishedAt = time.Now()
 
 	status, err = stream.CloseAndRecv()
 	if err != nil {
@@ -149,6 +156,8 @@ func (c *ClientGRPC) UploadFile(ctx context.Context, f string) (err error) {
 			status.Message)
 		return
 	}
+
+	stats.Bytes = bytesWritten
 
 	return
 }

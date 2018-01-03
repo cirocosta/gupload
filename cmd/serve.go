@@ -14,16 +14,24 @@ var Serve = cli.Command{
 	Flags: []cli.Flag{
 		&cli.IntFlag{
 			Name:  "port",
+			Usage: "port to bind to",
 			Value: 1313,
 		},
 		&cli.BoolFlag{
-			Name: "http2",
+			Name:  "http2",
+			Usage: "whether or not to serve via HTTP2 instead of gRPC",
 		},
 		&cli.StringFlag{
-			Name: "key",
+			Name:  "key",
+			Usage: "path to TLS certificate",
 		},
 		&cli.StringFlag{
-			Name: "certificate",
+			Name:  "certificate",
+			Usage: "path to TLS certificate",
+		},
+		&cli.StringFlag{
+			Name:  "compress",
+			Usage: "whether or not to enable compression",
 		},
 	},
 }
@@ -31,10 +39,10 @@ var Serve = cli.Command{
 func serveAction(c *cli.Context) (err error) {
 	var (
 		port        = c.Int("port")
-		server      core.Server
 		http2       = c.Bool("http2")
 		key         = c.String("key")
 		certificate = c.String("certificate")
+		server      core.Server
 	)
 
 	switch {
