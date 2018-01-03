@@ -112,9 +112,9 @@ func (c *ClientGRPC) UploadFile(ctx context.Context, f string) (stats Stats, err
 	defer stream.CloseSend()
 
 	stats.StartedAt = time.Now()
-	buf = make([]byte, 0, c.chunkSize)
+	buf = make([]byte, c.chunkSize)
 	for writing {
-		n, err = file.Read(buf[:cap(buf)])
+		n, err = file.Read(buf)
 		if err != nil {
 			if err == io.EOF {
 				writing = false
